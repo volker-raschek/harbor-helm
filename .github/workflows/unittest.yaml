@@ -1,25 +1,25 @@
-name: Unit test
+name: Helm unittest
 
 on:
   pull_request:
+    types: [ "opened", "reopened", "synchronize" ]
   push:
+    branches: [ "**" ]
+  workflow_dispatch: {}
 
 jobs:
-  unit-test:
+  helm-unittest:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Set up Helm 3.11.1
-        uses: azure/setup-helm@v1
-        with:
-          version: '3.11.1'
-
-      - name: Install Helm Unit Test Plugin
-        run: |
-          helm plugin install https://github.com/helm-unittest/helm-unittest --version v0.4.4
-
-      - name: Run unit tests
-        run:
-          helm unittest -f 'test/unittest/*/*.yaml' .
+    - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+    - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+      with:
+        version: v4.3.1 # renovate: datasource=github-releases depName=helm/helm
+    - env:
+        HELM_UNITTEST_VERSION: v1.2.1 # renovate: datasource=github-releases depName=helm-unittest/helm-unittest
+      name: Install helm-unittest
+      run: helm plugin install --verify=false --version "${HELM_UNITTEST_VERSION}" https://github.com/helm-unittest/helm-unittest
+    - name: Update helm dependencies
+      run: helm dependency update
+    - name: Execute helm unittests
+      run: helm unittest --strict --file 'test/unittests/**/*.yaml' .
